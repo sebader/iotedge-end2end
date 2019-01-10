@@ -4,13 +4,15 @@ using System.Threading.Tasks;
 using Microsoft.ApplicationInsights;
 using Microsoft.Azure.Devices;
 using Microsoft.Azure.WebJobs;
+using Microsoft.Azure.WebJobs.Host;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
-namespace CloudFunctions
+namespace Edge.End2End
 {
     public static class DirectMethodCaller
     {
+
         private static IConfigurationRoot config = new ConfigurationBuilder()
                 .SetBasePath(Environment.CurrentDirectory)
                 .AddJsonFile("local.settings.json", optional: true, reloadOnChange: true)
@@ -33,9 +35,10 @@ namespace CloudFunctions
         [FunctionName("DirectMethodCaller")]
         public static async Task Run([TimerTrigger("0 */2 * * * *", RunOnStartup = false)]TimerInfo myTimer, ILogger log)
         {
-
             log.LogInformation($"DirectMethodCaller function executed at: {DateTime.Now}");
 
+            // Get device/modules from the config, which the Function should call the direct method on
+            // Multiple destinations can be supplied with comma-separated
             var destinations = config["destinationmodules"];
             var destinationModules = destinations.Split(',');
 
