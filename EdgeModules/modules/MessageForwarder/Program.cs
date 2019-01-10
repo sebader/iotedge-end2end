@@ -149,7 +149,11 @@ namespace MessageForwarder
                 var correlationId = message.Properties["correlationId"];
                 Log.Information($"Message CorrelationId={correlationId}");
 
-                var properties = new Dictionary<string, string> { { "correlationId", correlationId } };
+                var properties = new Dictionary<string, string>
+                {
+                    { "correlationId", correlationId },
+                    { "edgeModuleId", Environment.GetEnvironmentVariable("IOTEDGE_MODULEID") }
+                };
                 telemetry.TrackEvent("30-ReceivedMessage", properties);
 
                 var forwardedMessage = new Message(messageBytes);

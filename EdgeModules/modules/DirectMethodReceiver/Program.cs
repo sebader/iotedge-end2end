@@ -141,7 +141,12 @@ namespace DirectMethodReceiver
 
             var moduleClient = userContext as ModuleClient;
             var request = JsonConvert.DeserializeObject<MethodRequestPayload>(methodRequest.DataAsJson);
-            var properties = new Dictionary<string, string> { { "correlationId", request.CorrelationId } };
+
+             var properties = new Dictionary<string, string>
+            {
+                { "correlationId", request.CorrelationId },
+                { "edgeModuleId", Environment.GetEnvironmentVariable("IOTEDGE_MODULEID") }
+            };
 
             Log.Information($"NewMessageRequest method invocation received. Count={counterValue}. CorrelationId={request.CorrelationId}");
             telemetry.TrackEvent("20-ReceivedDirectMethodRequest", properties);
