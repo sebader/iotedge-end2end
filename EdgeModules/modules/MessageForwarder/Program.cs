@@ -148,8 +148,8 @@ namespace MessageForwarder
                 var telemetryProperties = new Dictionary<string, string>
                 {
                     { "correlationId", correlationId },
-                    { "edgeModuleId", Environment.GetEnvironmentVariable("IOTEDGE_MODULEID") },
-                    { "timestamp", DateTime.UtcNow.ToString("o") }
+                    { "processingStep", "30-MessageForwarderModule"},
+                    { "edgeModuleId", Environment.GetEnvironmentVariable("IOTEDGE_MODULEID") }
                 };
                 telemetry.TrackEvent("30-ReceivedMessage", telemetryProperties);
 

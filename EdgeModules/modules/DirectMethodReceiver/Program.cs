@@ -145,8 +145,8 @@ namespace DirectMethodReceiver
              var telemetryProperties = new Dictionary<string, string>
             {
                 { "correlationId", request.CorrelationId },
-                { "edgeModuleId", Environment.GetEnvironmentVariable("IOTEDGE_MODULEID") },
-                { "timestamp", DateTime.UtcNow.ToString("o") }
+                { "processingStep", "20-DirectMethodReceiverModule"},
+                { "edgeModuleId", Environment.GetEnvironmentVariable("IOTEDGE_MODULEID") }
             };
 
             Log.Information($"NewMessageRequest method invocation received. Count={counterValue}. CorrelationId={request.CorrelationId}");

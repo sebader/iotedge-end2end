@@ -47,7 +47,7 @@ namespace Edge.End2End
 
             // Generate a Guid as the correlationId which we use to track the message through the pipeline
             var correlationId = Guid.NewGuid().ToString();
-            
+
             dynamic payload = new
             {
                 correlationId = correlationId,
@@ -66,7 +66,7 @@ namespace Edge.End2End
                 var telemetryProperties = new Dictionary<string, string>
                 {
                     { "correlationId", correlationId },
-                    { "timestamp", DateTime.UtcNow.ToString("o") }
+                    { "processingStep", "1-DirectMethodCaller"}
                 };
 
                 telemetry.TrackEvent("10-StartMethodInvocation", telemetryProperties);

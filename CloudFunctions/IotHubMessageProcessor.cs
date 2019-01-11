@@ -34,7 +34,7 @@ namespace Edge.End2End
                 var telemetryProperties = new Dictionary<string, string>
                 {
                     { "correlationId", correlationId },
-                    { "timestamp", DateTime.UtcNow.ToString("o") }
+                    { "processingStep", "100-IotHubMessageProcessor"}
                 };
 
                 telemetry.TrackEvent("100-ReceivedIoTHubMessage", telemetryProperties);
