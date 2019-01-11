@@ -7,6 +7,7 @@ using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Host;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 
 namespace Edge.End2End
 {
@@ -44,8 +45,16 @@ namespace Edge.End2End
 
             var methodRequest = new CloudToDeviceMethod(METHOD_NAME, TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(10));
 
+            // Generate a Guid as the correlationId which we use to track the message through the pipeline
             var correlationId = Guid.NewGuid().ToString();
-            var payloadJson = "{\"correlationId\": \"" + correlationId + "\", \"text\": \"End2End test message with correlationId=" + correlationId + "\"}";
+            
+            dynamic payload = new
+            {
+                correlationId = correlationId,
+                text = $"End2End test message with correlationId={correlationId}"
+            };
+
+            var payloadJson = JsonConvert.SerializeObject(payload);
 
             methodRequest.SetPayloadJson(payloadJson);
             foreach (var destination in destinationModules)
@@ -54,28 +63,35 @@ namespace Edge.End2End
                 var device = parts[0];
                 var module = parts[1];
 
-                var properties = new Dictionary<string, string> { { "correlationId", correlationId } };
-                telemetry.TrackEvent("10-StartMethodInvocation", properties);
+                var telemetryProperties = new Dictionary<string, string>
+                {
+                    { "correlationId", correlationId },
+                    { "timestamp", DateTime.UtcNow.ToString("o") }
+                };
+
+                telemetry.TrackEvent("10-StartMethodInvocation", telemetryProperties);
                 try
                 {
                     log.LogInformation($"Invoking method {METHOD_NAME} on module {destination}. CorrelationId={correlationId}");
                     // Invoke direct method
                     var result = await _iothubServiceClient.InvokeDeviceMethodAsync(device, module, methodRequest).ConfigureAwait(false);
 
-                    properties.Add("MethodReturnCode", $"{result.Status}");
+                    telemetryProperties.Add("MethodReturnCode", $"{result.Status}");
                     if (IsSuccessStatusCode(result.Status))
                     {
-                        telemetry.TrackEvent("11-SuccessfulMethodInvocation", properties);
+                        telemetry.TrackEvent("11-SuccessfulMethodInvocation", telemetryProperties);
                         log.LogInformation($"[{destination}] Successful direct method call result code={result.Status}");
                     }
                     else
                     {
-                        telemetry.TrackEvent("15-UnsuccessfulMethodInvocation", properties);
+                        telemetry.TrackEvent("15-UnsuccessfulMethodInvocation", telemetryProperties);
                         log.LogWarning($"[{destination}] Unsuccessful direct method call result code={result.Status}");
                     }
                 }
                 catch (Exception e)
                 {
+                    telemetryProperties.Add("methodInvocationException", e.Message);
+                    telemetry.TrackEvent("16-ExceptionInMethodInvocation", telemetryProperties);
                     log.LogError(e, $"[{destination}] Exeception on direct method call");
                 }
             }

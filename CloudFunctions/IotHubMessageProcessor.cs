@@ -31,8 +31,13 @@ namespace Edge.End2End
                 var correlationId = message.Properties["correlationId"].ToString();
                 log.LogInformation($"Message correlationId={correlationId}");
 
-                var properties = new Dictionary<string, string> { { "correlationId", correlationId } };
-                telemetry.TrackEvent("100-ReceivedIoTHubMessage", properties);
+                var telemetryProperties = new Dictionary<string, string>
+                {
+                    { "correlationId", correlationId },
+                    { "timestamp", DateTime.UtcNow.ToString("o") }
+                };
+
+                telemetry.TrackEvent("100-ReceivedIoTHubMessage", telemetryProperties);
             }
             else
             {

@@ -117,12 +117,12 @@ namespace DirectMethodReceiver
         /// <param name="methodRequest"></param>
         /// <param name="userContext"></param>
         /// <returns></returns>
-        private async static Task<MethodResponse> DefaultMethodHandler(MethodRequest methodRequest, object userContext)
+        private static Task<MethodResponse> DefaultMethodHandler(MethodRequest methodRequest, object userContext)
         {
             Log.Information($"Received method invocation for non-existing method {methodRequest.Name}. Returning 404.");
             var result = new MethodResponsePayload() { ModuleResponse = $"Method {methodRequest.Name} not implemented" };
             var outResult = JsonConvert.SerializeObject(result, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
-            return new MethodResponse(Encoding.UTF8.GetBytes(outResult), 404);
+            return Task.FromResult(new MethodResponse(Encoding.UTF8.GetBytes(outResult), 404));
         }
 
         /// <summary>
@@ -135,21 +135,22 @@ namespace DirectMethodReceiver
         private static async Task<MethodResponse> NewMessageRequest(MethodRequest methodRequest, object userContext)
         {
             int counterValue = Interlocked.Increment(ref counter);
+            var moduleClient = userContext as ModuleClient;
 
             int resultCode = 200;
             MethodResponsePayload result;
 
-            var moduleClient = userContext as ModuleClient;
             var request = JsonConvert.DeserializeObject<MethodRequestPayload>(methodRequest.DataAsJson);
 
-             var properties = new Dictionary<string, string>
+             var telemetryProperties = new Dictionary<string, string>
             {
                 { "correlationId", request.CorrelationId },
-                { "edgeModuleId", Environment.GetEnvironmentVariable("IOTEDGE_MODULEID") }
+                { "edgeModuleId", Environment.GetEnvironmentVariable("IOTEDGE_MODULEID") },
+                { "timestamp", DateTime.UtcNow.ToString("o") }
             };
 
             Log.Information($"NewMessageRequest method invocation received. Count={counterValue}. CorrelationId={request.CorrelationId}");
-            telemetry.TrackEvent("20-ReceivedDirectMethodRequest", properties);
+            telemetry.TrackEvent("20-ReceivedDirectMethodRequest", telemetryProperties);
 
             var message = new Message(Encoding.UTF8.GetBytes(request.Text));
             message.ContentType = "application/json";
@@ -160,14 +161,14 @@ namespace DirectMethodReceiver
             try
             {
                 await moduleClient.SendEventAsync("output1", message);
-                telemetry.TrackEvent("21-MessageSentToEdgeHub", properties);
+                telemetry.TrackEvent("21-MessageSentToEdgeHub", telemetryProperties);
                 Log.Information("Message sent successfully to Edge Hub");
                 result = new MethodResponsePayload() { ModuleResponse = $"Message sent successfully to Edge Hub" };
             }
             catch (Exception e)
             {
                 Log.Error(e, "Error during message sending to Edge Hub");
-                telemetry.TrackEvent("25-ErrorMessageNotSentToEdgeHub", properties);
+                telemetry.TrackEvent("25-ErrorMessageNotSentToEdgeHub", telemetryProperties);
                 resultCode = 500;
                 result = new MethodResponsePayload() { ModuleResponse = $"Message not sent to Edge Hub" };
             }

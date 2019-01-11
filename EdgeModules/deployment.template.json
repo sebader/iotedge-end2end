@@ -63,6 +63,9 @@
             "env": {
               "APPINSIGHTS_INSTRUMENTATIONKEY": {
                 "value": "$APPINSIGHTS_INSTRUMENTATIONKEY"
+              },
+              "TransportProtocol":{
+                "value": "Amqp"
               }
             }
           },

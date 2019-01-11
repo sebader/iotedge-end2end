@@ -117,12 +117,12 @@ namespace MessageForwarder
         /// <param name="methodRequest"></param>
         /// <param name="userContext"></param>
         /// <returns></returns>
-        private async static Task<MethodResponse> DefaultMethodHandler(MethodRequest methodRequest, object userContext)
+        private static Task<MethodResponse> DefaultMethodHandler(MethodRequest methodRequest, object userContext)
         {
             Log.Information($"Received method invocation for non-existing method {methodRequest.Name}. Returning 404.");
             dynamic result = new { ModuleResponse = $"Method {methodRequest.Name} not implemented" };
             var outResult = JsonConvert.SerializeObject(result);
-            return new MethodResponse(Encoding.UTF8.GetBytes(outResult), 404);
+            return Task.FromResult(new MethodResponse(Encoding.UTF8.GetBytes(outResult), 404));
         }
 
         /// <summary>
@@ -135,26 +135,23 @@ namespace MessageForwarder
             int counterValue = Interlocked.Increment(ref counter);
 
             var moduleClient = userContext as ModuleClient;
-            if (moduleClient == null)
-            {
-                throw new InvalidOperationException("UserContext doesn't contain expected values");
-            }
 
             byte[] messageBytes = message.GetBytes();
             string messageString = Encoding.UTF8.GetString(messageBytes);
-            Log.Information($"Received message: {counterValue}, Body: [{messageString}]");
+            Log.Information($"Received message - Counter: {counterValue}, Body: [{messageString}]");
 
             if (message.Properties.ContainsKey("correlationId"))
             {
                 var correlationId = message.Properties["correlationId"];
-                Log.Information($"Message CorrelationId={correlationId}");
+                Log.Information($"CorrelationId={correlationId}");
 
-                var properties = new Dictionary<string, string>
+                var telemetryProperties = new Dictionary<string, string>
                 {
                     { "correlationId", correlationId },
-                    { "edgeModuleId", Environment.GetEnvironmentVariable("IOTEDGE_MODULEID") }
+                    { "edgeModuleId", Environment.GetEnvironmentVariable("IOTEDGE_MODULEID") },
+                    { "timestamp", DateTime.UtcNow.ToString("o") }
                 };
-                telemetry.TrackEvent("30-ReceivedMessage", properties);
+                telemetry.TrackEvent("30-ReceivedMessage", telemetryProperties);
 
                 var forwardedMessage = new Message(messageBytes);
                 forwardedMessage.ContentType = "application/json";
@@ -165,23 +162,19 @@ namespace MessageForwarder
                 try
                 {
                     await moduleClient.SendEventAsync("output1", forwardedMessage);
-                    telemetry.TrackEvent("31-MessageSentToEdgeHub", properties);
+                    telemetry.TrackEvent("31-MessageSentToEdgeHub", telemetryProperties);
                     Log.Information("Received message forwarded");
                 }
                 catch (Exception e)
                 {
                     Log.Error(e, "Error during message sending to Edge Hub");
-                    telemetry.TrackEvent("35-ErrorMessageNotSentToEdgeHub", properties);
+                    telemetry.TrackEvent("35-ErrorMessageNotSentToEdgeHub", telemetryProperties);
                 }
             }
             else
             {
                 Log.Warning("Message received without correlationId property");
             }
-
-
-
-
             return MessageResponse.Completed;
         }
 
