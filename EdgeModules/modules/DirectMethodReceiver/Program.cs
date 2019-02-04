@@ -15,6 +15,7 @@ namespace DirectMethodReceiver
     {
         // AppInsights TelemetryClient
         // Note: In "real-life" Edge modules, the use of AppInsights might not be ideal if the Edge is supposed to be running fully or partially offline
+        // Thus, AppInsights is not used here for the actual module logging
         private static TelemetryClient telemetry = new TelemetryClient();
 
         private static int counter = 0;
