@@ -10,4 +10,4 @@ In the cloud, a second Function is triggered by new telemetry messages on the Io
 
 All steps in the cycle are getting logged into Application Insights. This enables reporting and alerting if there are any errors at any point in the loop - and also about the end to end duration of the message from the start in the cloud until it is being received again in the cloud.
 
-![architecture](https://raw.githubusercontent.com/sebader/iotedge-end2end/master/Media/architecture_diagram.png)
+![architecture](Media/architecture_diagram.png?raw=true)
