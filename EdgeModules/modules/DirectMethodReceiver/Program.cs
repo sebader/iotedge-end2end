@@ -14,6 +14,7 @@ namespace DirectMethodReceiver
     class Program
     {
         // AppInsights TelemetryClient
+        // Note: In "real-life" Edge modules, the use of AppInsights might not be ideal if the Edge is supposed to be running fully or partially offline
         private static TelemetryClient telemetry = new TelemetryClient();
 
         private static int counter = 0;
@@ -99,7 +100,7 @@ namespace DirectMethodReceiver
 
             // Sometimes the connection can not be recovered if it is in either of those states.
             // To solve this, we exit the module. The Edge Agent will then restart it (retrying with backoff)
-            if (reason == ConnectionStatusChangeReason.Retry_Expired)
+            if (reason == ConnectionStatusChangeReason.Retry_Expired || reason == ConnectionStatusChangeReason.Client_Close)
             {
                 Log.Error($"Connection can not be re-established. Exiting module");
                 Environment.Exit(1);

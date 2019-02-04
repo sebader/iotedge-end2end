@@ -14,6 +14,7 @@ namespace MessageForwarder
     class Program
     {
         // AppInsights TelemetryClient
+        // Note: In "real-life" Edge modules, the use of AppInsights might not be ideal if the Edge is supposed to be running fully or partially offline
         private static TelemetryClient telemetry = new TelemetryClient();
 
         private static int counter = 0;
@@ -99,7 +100,7 @@ namespace MessageForwarder
 
             // Sometimes the connection can not be recovered if it is in either of those states.
             // To solve this, we exit the module. The Edge Agent will then restart it (retrying with backoff)
-            if (reason == ConnectionStatusChangeReason.Retry_Expired)
+            if (reason == ConnectionStatusChangeReason.Retry_Expired || reason == ConnectionStatusChangeReason.Client_Close)
             {
                 Log.Error($"Connection can not be re-established. Exiting module");
                 Environment.Exit(1);
@@ -107,7 +108,7 @@ namespace MessageForwarder
         }
 
         /// <summary>
-        /// Default method handler for any method calls which are not implemented
+        /// Fallback method handler for any method calls which are not implemented
         /// </summary>
         /// <param name="methodRequest"></param>
         /// <param name="userContext"></param>
@@ -121,9 +122,8 @@ namespace MessageForwarder
         }
 
         /// <summary>
-        /// This method is called whenever the module is sent a message from the EdgeHub. 
-        /// It just pipe the messages without any change.
-        /// It prints all the incoming messages.
+        /// This method is called whenever the module is receiving a message from the EdgeHub. 
+        /// It just pipes the messages without any change.
         /// </summary>
         static async Task<MessageResponse> PipeMessage(Message message, object userContext)
         {
@@ -173,6 +173,10 @@ namespace MessageForwarder
             return MessageResponse.Completed;
         }
 
+        /// <summary>
+        /// Initialize logging using Serilog
+        /// LogLevel can be controlled via RuntimeLogLevel env var
+        /// </summary>
         private static void InitLogging()
         {
             LoggerConfiguration loggerConfiguration = new LoggerConfiguration();
