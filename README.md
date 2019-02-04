@@ -11,3 +11,21 @@ In the cloud, a second Function is triggered by new telemetry messages on the Io
 All steps in the cycle are getting logged into Application Insights. This enables reporting and alerting if there are any errors at any point in the loop - and also about the end to end duration of the message from the start in the cloud until it is being received again in the cloud.
 
 ![architecture](Media/architecture_diagram.png?raw=true)
+
+## How to deploy / run the solution
+
+1) Create an Azure Function instance. Also create an Application Insights instance.
+1) Create an Azure IoT Hub
+1) Create an Edge device in the IoT Hub
+1) Deploy the two modules to your Edge device (folder EdgeModules) and set the routing accordingly (see deployment.template.json for reference). Make sure to set the instrumentation key of your Application Insights instance.
+1) Set the following settings in the Azure Function Application settings:<sup>[1](#footnote1)</sup> 
+    * *iothubowner_cs*  => The IoT Hub Owner connection string of your IoT Hub
+    * *iothubevents_cs* => The connection string of the built-in Event Hub compatible endpoint of your IoT Hub
+    * *destinationmodules* => Comma-separates list of Edge module IDs of Direct Method Receiver modules, e.g. ("edgedevice1/DirectMethodReceiver")
+1) Deploy the two Functions (folder CloudFunctions)
+
+Now, the Function should trigger (default: every 2 minutes) and start the flow. After a few minutes, you should be able to see log messages in Application Insights.
+If you run into any problems or have questions, feel free to open an issue here in the repo.
+
+---
+<a name="footnote1">1</a>: I recommend to use [Azure Key Vault](https://docs.microsoft.com/en-us/azure/app-service/app-service-key-vault-references) to store your secret app settings such as connections strings
