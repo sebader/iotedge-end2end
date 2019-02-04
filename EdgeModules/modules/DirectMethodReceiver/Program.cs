@@ -2,16 +2,12 @@ namespace DirectMethodReceiver
 {
     using System;
     using System.Collections.Generic;
-    using System.IO;
-    using System.Runtime.InteropServices;
     using System.Runtime.Loader;
-    using System.Security.Cryptography.X509Certificates;
     using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
     using Microsoft.ApplicationInsights;
     using Microsoft.Azure.Devices.Client;
-    using Microsoft.Azure.Devices.Client.Transport.Mqtt;
     using Newtonsoft.Json;
     using Serilog;
 
@@ -59,7 +55,7 @@ namespace DirectMethodReceiver
         /// </summary>
         static async Task<ModuleClient> Init()
         {
-            var transportType = TransportType.Mqtt_Tcp_Only;
+            var transportType = TransportType.Amqp_Tcp_Only;
             string transportProtocol = Environment.GetEnvironmentVariable("TransportProtocol");
 
             // The way the module connects to the EdgeHub can be controlled via the env variable. Either MQTT or AMQP
@@ -74,7 +70,7 @@ namespace DirectMethodReceiver
                         transportType = TransportType.Mqtt_Tcp_Only;
                         break;
                     default:
-                        // Anything else: use default of MQTT
+                        // Anything else: use default
                         Log.Warning($"Ignoring unknown TransportProtocol={transportProtocol}. Using default={transportType}");
                         break;
                 }
@@ -82,10 +78,9 @@ namespace DirectMethodReceiver
 
             // Open a connection to the Edge runtime
             ModuleClient moduleClient = await ModuleClient.CreateFromEnvironmentAsync(transportType);
-            await moduleClient.OpenAsync();
-
             moduleClient.SetConnectionStatusChangesHandler(ConnectionStatusHandler);
 
+            await moduleClient.OpenAsync();
             Log.Information($"Edge Hub module client initialized using {transportType}");
 
             return moduleClient;
@@ -142,35 +137,44 @@ namespace DirectMethodReceiver
 
             var request = JsonConvert.DeserializeObject<MethodRequestPayload>(methodRequest.DataAsJson);
 
-             var telemetryProperties = new Dictionary<string, string>
+            if (!string.IsNullOrEmpty(request.CorrelationId))
             {
-                { "correlationId", request.CorrelationId },
-                { "processingStep", "20-DirectMethodReceiverModule"},
-                { "edgeModuleId", Environment.GetEnvironmentVariable("IOTEDGE_MODULEID") }
-            };
+                var telemetryProperties = new Dictionary<string, string>
+                {
+                    { "correlationId", request.CorrelationId },
+                    { "processingStep", "20-DirectMethodReceiverModule"},
+                    { "edgeModuleId", Environment.GetEnvironmentVariable("IOTEDGE_MODULEID") }
+                };
 
-            Log.Information($"NewMessageRequest method invocation received. Count={counterValue}. CorrelationId={request.CorrelationId}");
-            telemetry.TrackEvent("20-ReceivedDirectMethodRequest", telemetryProperties);
+                Log.Information($"NewMessageRequest method invocation received. Count={counterValue}. CorrelationId={request.CorrelationId}");
+                telemetry.TrackEvent("20-ReceivedDirectMethodRequest", telemetryProperties);
 
-            var message = new Message(Encoding.UTF8.GetBytes(request.Text));
-            message.ContentType = "application/json";
-            message.ContentEncoding = "UTF-8";
-            message.Properties.Add("correlationId", request.CorrelationId);
-            message.Properties.Add("scope", "end2end");
+                var message = new Message(Encoding.UTF8.GetBytes(request.Text));
+                message.ContentType = "application/json";
+                message.ContentEncoding = "UTF-8";
+                message.Properties.Add("correlationId", request.CorrelationId);
+                message.Properties.Add("scope", "end2end");
 
-            try
-            {
-                await moduleClient.SendEventAsync("output1", message);
-                telemetry.TrackEvent("21-MessageSentToEdgeHub", telemetryProperties);
-                Log.Information("Message sent successfully to Edge Hub");
-                result = new MethodResponsePayload() { ModuleResponse = $"Message sent successfully to Edge Hub" };
+                try
+                {
+                    await moduleClient.SendEventAsync("output1", message);
+                    telemetry.TrackEvent("21-MessageSentToEdgeHub", telemetryProperties);
+                    Log.Information("Message sent successfully to Edge Hub");
+                    result = new MethodResponsePayload() { ModuleResponse = $"Message sent successfully to Edge Hub" };
+                }
+                catch (Exception e)
+                {
+                    Log.Error(e, "Error during message sending to Edge Hub");
+                    telemetry.TrackEvent("25-ErrorMessageNotSentToEdgeHub", telemetryProperties);
+                    resultCode = 500;
+                    result = new MethodResponsePayload() { ModuleResponse = $"Message not sent to Edge Hub" };
+                }
             }
-            catch (Exception e)
+            else
             {
-                Log.Error(e, "Error during message sending to Edge Hub");
-                telemetry.TrackEvent("25-ErrorMessageNotSentToEdgeHub", telemetryProperties);
-                resultCode = 500;
-                result = new MethodResponsePayload() { ModuleResponse = $"Message not sent to Edge Hub" };
+                resultCode = 400;
+                result = new MethodResponsePayload() { ModuleResponse = $"NewMessageRequest received without correlationId property" };
+                Log.Warning("NewMessageRequest received without correlationId property");
             }
             var outResult = JsonConvert.SerializeObject(result);
             return new MethodResponse(Encoding.UTF8.GetBytes(outResult), resultCode);

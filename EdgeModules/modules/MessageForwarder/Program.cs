@@ -2,16 +2,12 @@ namespace MessageForwarder
 {
     using System;
     using System.Collections.Generic;
-    using System.IO;
-    using System.Runtime.InteropServices;
     using System.Runtime.Loader;
-    using System.Security.Cryptography.X509Certificates;
     using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
     using Microsoft.ApplicationInsights;
     using Microsoft.Azure.Devices.Client;
-    using Microsoft.Azure.Devices.Client.Transport.Mqtt;
     using Newtonsoft.Json;
     using Serilog;
 
@@ -59,7 +55,7 @@ namespace MessageForwarder
         /// </summary>
         static async Task<ModuleClient> Init()
         {
-            var transportType = TransportType.Mqtt_Tcp_Only;
+            var transportType = TransportType.Amqp_Tcp_Only;
             string transportProtocol = Environment.GetEnvironmentVariable("TransportProtocol");
 
             // The way the module connects to the EdgeHub can be controlled via the env variable. Either MQTT or AMQP
@@ -74,7 +70,7 @@ namespace MessageForwarder
                         transportType = TransportType.Mqtt_Tcp_Only;
                         break;
                     default:
-                        // Anything else: use default of MQTT
+                        // Anything else: use default
                         Log.Warning($"Ignoring unknown TransportProtocol={transportProtocol}. Using default={transportType}");
                         break;
                 }
@@ -82,10 +78,9 @@ namespace MessageForwarder
 
             // Open a connection to the Edge runtime
             ModuleClient moduleClient = await ModuleClient.CreateFromEnvironmentAsync(transportType);
-            await moduleClient.OpenAsync();
-
             moduleClient.SetConnectionStatusChangesHandler(ConnectionStatusHandler);
 
+            await moduleClient.OpenAsync();
             Log.Information($"Edge Hub module client initialized using {transportType}");
 
             return moduleClient;

@@ -5,24 +5,86 @@
    "version": "0.2.0",
    "configurations": [
         {
-            "name": ".NET Core Launch (console)",
-            "type": "coreclr",
-            "request": "launch",
-            "preLaunchTask": "build",
-            // If you have changed target frameworks, make sure to update the program path.
-            "program": "${workspaceFolder}/EdgeModules/modules/DirectMethodReceiver/bin/Debug/netcoreapp2.1/DirectMethodReceiver.dll",
-            "args": [],
-            "cwd": "${workspaceFolder}/EdgeModules/modules/DirectMethodReceiver",
-            // For more information about the 'console' field, see https://github.com/OmniSharp/omnisharp-vscode/blob/master/debugger-launchjson.md#console-terminal-window
-            "console": "internalConsole",
-            "stopAtEntry": false,
-            "internalConsoleOptions": "openOnSessionStart"
-        },
-        {
             "name": ".NET Core Attach",
             "type": "coreclr",
             "request": "attach",
             "processId": "${command:pickProcess}"
-        }
+        },
+        {
+            "name": "DirectMethodReceiver Remote Debug (.NET Core)",
+            "type": "coreclr",
+            "request": "attach",
+            "processId": "${command:pickRemoteProcess}",
+            "pipeTransport": {
+              "pipeProgram": "docker",
+              "pipeArgs": [
+                "exec",
+                "-i",
+                "DirectMethodReceiver",
+                "sh",
+                "-c"
+              ],
+              "debuggerPath": "~/vsdbg/vsdbg",
+              "pipeCwd": "${workspaceFolder}",
+              "quoteArgs": true
+            },
+            "sourceFileMap": {
+              "/app": "${workspaceFolder}/EdgeModules/modules/DirectMethodReceiver"
+            },
+            "justMyCode": true
+          },
+          {
+            "name": "DirectMethodReceiver Local Debug (.NET Core)",
+            "type": "coreclr",
+            "request": "launch",
+            "program": "${workspaceRoot}/EdgeModules/modules/DirectMethodReceiver/bin/Debug/netcoreapp2.1/DirectMethodReceiver.dll",
+            "args": [],
+            "cwd": "${workspaceRoot}/EdgeModules/modules/DirectMethodReceiver",
+            "internalConsoleOptions": "openOnSessionStart",
+            "stopAtEntry": false,
+            "console": "internalConsole",
+            "env": {
+              "EdgeHubConnectionString": "${config:azure-iot-edge.EdgeHubConnectionString}",
+              "EdgeModuleCACertificateFile": "${config:azure-iot-edge.EdgeModuleCACertificateFile}"
+            }
+          },
+          {
+            "name": "MessageForwarder Remote Debug (.NET Core)",
+            "type": "coreclr",
+            "request": "attach",
+            "processId": "${command:pickRemoteProcess}",
+            "pipeTransport": {
+              "pipeProgram": "docker",
+              "pipeArgs": [
+                "exec",
+                "-i",
+                "MessageForwarder",
+                "sh",
+                "-c"
+              ],
+              "debuggerPath": "~/vsdbg/vsdbg",
+              "pipeCwd": "${workspaceFolder}",
+              "quoteArgs": true
+            },
+            "sourceFileMap": {
+              "/app": "${workspaceFolder}/EdgeModules/modules/MessageForwarder"
+            },
+            "justMyCode": true
+          },
+          {
+            "name": "MessageForwarder Local Debug (.NET Core)",
+            "type": "coreclr",
+            "request": "launch",
+            "program": "${workspaceRoot}/EdgeModules/modules/MessageForwarder/bin/Debug/netcoreapp2.1/MessageForwarder.dll",
+            "args": [],
+            "cwd": "${workspaceRoot}/EdgeModules/modules/MessageForwarder",
+            "internalConsoleOptions": "openOnSessionStart",
+            "stopAtEntry": false,
+            "console": "internalConsole",
+            "env": {
+              "EdgeHubConnectionString": "${config:azure-iot-edge.EdgeHubConnectionString}",
+              "EdgeModuleCACertificateFile": "${config:azure-iot-edge.EdgeModuleCACertificateFile}"
+            }
+          }
     ,]
 }
