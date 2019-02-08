@@ -16,6 +16,7 @@ All steps in the cycle are getting logged into Application Insights. This enable
 
 1) Create an Azure Function instance. Also create an Application Insights instance.
 1) Create an Azure IoT Hub
+    * Create a consumer group on the Event Hub compatible endpoint call *receiverfunction*
 1) Create an Edge device in the IoT Hub
 1) Deploy the two modules to your Edge device (folder EdgeModules) and set the routing accordingly (see deployment.template.json for reference). Make sure to set the instrumentation key of your Application Insights instance.
 1) Set the following settings in the Azure Function Application settings:<sup>[1](#footnote1)</sup> 
