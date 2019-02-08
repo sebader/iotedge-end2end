@@ -58,7 +58,7 @@ namespace MessageForwarder
         static async Task<ModuleClient> Init()
         {
             var transportType = TransportType.Amqp_Tcp_Only;
-            string transportProtocol = Environment.GetEnvironmentVariable("TransportProtocol");
+            string transportProtocol = Environment.GetEnvironmentVariable("ClientTransportType");
 
             // The way the module connects to the EdgeHub can be controlled via the env variable. Either MQTT or AMQP
             if (!string.IsNullOrEmpty(transportProtocol))

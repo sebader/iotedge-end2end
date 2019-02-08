@@ -33,8 +33,11 @@ namespace Edge.End2End
                     { "correlationId", correlationId },
                     { "processingStep", "100-IotHubMessageProcessor"}
                 };
-
-                telemetry.TrackEvent("100-ReceivedIoTHubMessage", telemetryProperties);
+                var metrics = new Dictionary<string, double>
+                {
+                    { "EndEventsReceived", 1}
+                };
+                telemetry.TrackEvent("100-ReceivedIoTHubMessage", telemetryProperties, metrics);
             }
             else
             {

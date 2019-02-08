@@ -64,7 +64,7 @@
               "APPINSIGHTS_INSTRUMENTATIONKEY": {
                 "value": "$APPINSIGHTS_INSTRUMENTATIONKEY"
               },
-              "TransportProtocol":{
+              "ClientTransportType":{
                 "value": "Amqp"
               }
             }
@@ -82,7 +82,7 @@
               "APPINSIGHTS_INSTRUMENTATIONKEY": {
                 "value": "$APPINSIGHTS_INSTRUMENTATIONKEY"
               },
-              "TransportProtocol":{
+              "ClientTransportType":{
                 "value": "Mqtt"
               }
             }
