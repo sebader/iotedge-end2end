@@ -19,6 +19,7 @@ namespace MessageForwarder
         private static TelemetryClient telemetry = new TelemetryClient();
 
         private static int counter = 0;
+        private static CancellationTokenSource _cts;
         public static int Main() => MainAsync().Result;
 
         static async Task<int> MainAsync()
@@ -34,10 +35,10 @@ namespace MessageForwarder
             await moduleClient.SetInputMessageHandlerAsync("input1", PipeMessage, moduleClient);
 
             // Wait until the app unloads or is cancelled
-            var cts = new CancellationTokenSource();
-            AssemblyLoadContext.Default.Unloading += (ctx) => cts.Cancel();
-            Console.CancelKeyPress += (sender, cpe) => cts.Cancel();
-            await WhenCancelled(cts.Token);
+            _cts = new CancellationTokenSource();
+            AssemblyLoadContext.Default.Unloading += (ctx) => _cts.Cancel();
+            Console.CancelKeyPress += (sender, cpe) => _cts.Cancel();
+            await WhenCancelled(_cts.Token);
 
             return 0;
         }
@@ -104,7 +105,7 @@ namespace MessageForwarder
             if (reason == ConnectionStatusChangeReason.Retry_Expired || reason == ConnectionStatusChangeReason.Client_Close)
             {
                 Log.Error($"Connection can not be re-established. Exiting module");
-                Environment.Exit(1);
+                _cts.Cancel();
             }
         }
 

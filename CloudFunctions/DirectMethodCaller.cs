@@ -41,23 +41,23 @@ namespace Edge.End2End
             // Multiple destinations can be supplied with comma-separated
             var destinations = config["destinationmodules"];
             var destinationModules = destinations.Split(',');
-
-            var methodRequest = new CloudToDeviceMethod(METHOD_NAME, TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(10));
-
-            // Generate a Guid as the correlationId which we use to track the message through the pipeline
-            var correlationId = Guid.NewGuid().ToString();
-
-            dynamic payload = new
-            {
-                correlationId = correlationId,
-                text = $"End2End test message with correlationId={correlationId}"
-            };
-
-            var payloadJson = JsonConvert.SerializeObject(payload);
-
-            methodRequest.SetPayloadJson(payloadJson);
             foreach (var destination in destinationModules)
             {
+                var methodRequest = new CloudToDeviceMethod(METHOD_NAME, TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(10));
+
+                // Generate a Guid as the correlationId which we use to track the message through the pipeline
+                var correlationId = Guid.NewGuid().ToString();
+
+                dynamic payload = new
+                {
+                    correlationId = correlationId,
+                    text = $"End2End test message with correlationId={correlationId}"
+                };
+
+                var payloadJson = JsonConvert.SerializeObject(payload);
+
+                methodRequest.SetPayloadJson(payloadJson);
+
                 var parts = destination.Split('/');
                 var device = parts[0];
                 var module = parts[1];
