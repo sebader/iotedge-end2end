@@ -105,7 +105,7 @@ namespace MessageForwarder
             if (reason == ConnectionStatusChangeReason.Retry_Expired || reason == ConnectionStatusChangeReason.Client_Close)
             {
                 Log.Error($"Connection can not be re-established. Exiting module");
-                _cts.Cancel();
+                _cts?.Cancel();
             }
         }
 
